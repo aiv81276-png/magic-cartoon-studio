@@ -2,49 +2,88 @@
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Magic Cartoon Studio</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#101426;color:white;font-family:Arial,sans-serif;padding:20px}
-h1{color:#ffcf5a;text-align:center}
-p{text-align:center;color:#cbd0e0}
-.card{background:#202944;padding:18px;border-radius:16px;margin-top:20px}
-label{display:block;margin:15px 0 8px}
-input,select,button{width:100%;padding:14px;border:0;border-radius:9px;font-size:16px}
-button{background:#ffbd45;color:#171717;font-weight:bold;margin-top:18px}
-#result{white-space:pre-wrap;line-height:1.6}
+body{margin:0;padding:18px;background:#101426;color:white;font-family:Arial}
+h1{text-align:center;color:#ffcf5a}
+p{text-align:center;color:#ccd2e5}
+.card{background:#202944;padding:18px;border-radius:16px;margin:18px 0}
+label{display:block;margin:14px 0 7px}
+input,select,button{width:100%;padding:13px;border:0;border-radius:9px;font-size:16px}
+button{background:#ffbd45;font-weight:bold;margin-top:16px}
+#result{white-space:pre-wrap;line-height:1.6;margin-top:18px}
+.small{font-size:13px;color:#b9c3dc}
 </style>
 </head>
 <body>
 <h1>🎬 Magic Cartoon Studio</h1>
-<p>Apni cartoon story banane ka safar shuru karo!</p>
+<p>Apni original cartoon duniya banao!</p>
 <div class="card">
-<label>Cartoon story ka naam</label>
-<input id="story" placeholder="Jaise: Jadui Jungle">
-<label>Video type</label>
-<select id="type">
-<option> YouTube Shorts (9:16)</option>
-<option> Long Video (16:9)</option>
+<label>Story ka naam</label>
+<input id="name" placeholder="Jaise: Jadui Jungle">
+<label>Video ki length</label>
+<select id="length">
+<option value="30 second">30 second</option>
+<option value="60 second">1 minute</option>
+<option value="3 minute">3 minute</option>
+<option value="5 minute">5 minute</option>
+<option value="10 minute">10 minute</option>
+<option value="15 minute">15 minute</option>
+<option value="30 minute">30 minute</option>
 </select>
-<label>Video language</label>
-<select id="lang">
+<label>Video format</label>
+<select id="format">
+<option>YouTube Shorts (9:16)</option>
+<option>Long Video (16:9)</option>
+</select>
+<label>Story type</label>
+<select id="genre">
+<option>Adventure</option>
+<option>Comedy</option>
+<option>Moral Story</option>
+<option>Animal Story</option>
+<option>Fantasy</option>
+<option>Friendship</option>
+</select>
+<label>Language</label>
+<select id="language">
 <option>Hindi</option>
 <option>Hinglish</option>
 </select>
-<button onclick="makeStory()">Story Idea Banao</button>
+<button onclick="createStory()">✨ Story aur Scene Prompts Banao</button>
 <div id="result"></div>
+<button onclick="copyStory()">📋 Story Copy Karo</button>
 </div>
+<p class="small">Abhi ye offline demo story planner hai. AI images, voice aur video generation abhi connect nahi hain.</p>
 <script>
-function makeStory(){
-let name=document.getElementById('story').value.trim();
-let type=document.getElementById('type').value;
-let lang=document.getElementById('lang').value;
-if(!name){alert('Pehle story ka naam likho');return;}
-document.getElementById('result').textContent=
-'🎥 '+name+'\nVideo: '+type+
-'\nLanguage: '+lang+
-'\n\nScene 1: Ek khoobsurat 3D cartoon duniya mein kahani shuru hoti hai.\n\nScene 2: Hamara hero ek nayi mushkil ka saamna karta hai.\n\nScene 3: Hero himmat aur samajhdari se mushkil hal karta hai.\n\nScene 4: Kahani khushi aur seekh ke saath khatam hoti hai.\n\nYeh abhi demo story hai.';
+let finalStory="";
+function createStory(){
+let n=document.getElementById("name").value.trim();
+if(!n){alert("Pehle story ka naam likho");return;}
+let len=document.getElementById("length").value;
+let format=document.getElementById("format").value;
+let genre=document.getElementById("genre").value;
+let lang=document.getElementById("language").value;
+let scenes=len==="30 second"?3:len==="60 second"?4:len==="3 minute"?6:len==="5 minute"?8:len==="10 minute"?12:len==="15 minute"?16:20;
+let text="🎬 "+n+"\nLength: "+len+"\nFormat: "+format+"\nType: "+genre+"\nLanguage: "+lang+"\n\n";
+text+="ORIGINAL 3D CARTOON STORY\n\n";
+text+="Ek khoobsurat 3D cartoon duniya mein "+n+" ki kahani shuru hoti hai. Hamara hero ek nayi adventure par nikalta hai. Raaste mein use mushkilein, naye dost aur ek romanchak challenge milta hai. Apni himmat aur samajhdari se woh challenge hal karta hai aur sabko ek achhi seekh deta hai.\n\n";
+text+="SCENE BY SCENE PROMPTS\n\n";
+for(let i=1;i<=scenes;i++){
+text+="Scene "+i+": "+(i===1?"Establishing shot: "+n+" ki khoobsurat original 3D cartoon duniya, bright colors, cinematic lighting.":i===scenes?"Final scene: hero khushi se apne doston ke saath, warm cinematic ending.":"Hero ka agla adventure, expressive original 3D cartoon characters, detailed background, cinematic camera movement.")+"\n\n";
+}
+text+="VOICEOVER: "+lang+" mein natural, expressive storytelling voice.\n";
+text+="MUSIC: Original cheerful cartoon background music.\n";
+text+="SUBTITLES: "+lang+" subtitles.\n";
+finalStory=text;
+document.getElementById("result").textContent=text;
+}
+function copyStory(){
+if(!finalStory){alert("Pehle story banao");return;}
+if(navigator.clipboard){navigator.clipboard.writeText(finalStory).then(()=>alert("Story copy ho gayi!")).catch(()=>alert("Story ko long press karke copy karo."));}
+else{alert("Story ko long press karke copy karo.");}
 }
 </script>
 </body>
