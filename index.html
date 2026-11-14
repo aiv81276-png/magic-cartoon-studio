@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Magic Cartoon Studio</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101426;color:white;font-family:Arial,sans-serif;padding:20px}
+h1{color:#ffcf5a;text-align:center}
+p{text-align:center;color:#cbd0e0}
+.card{background:#202944;padding:18px;border-radius:16px;margin-top:20px}
+label{display:block;margin:15px 0 8px}
+input,select,button{width:100%;padding:14px;border:0;border-radius:9px;font-size:16px}
+button{background:#ffbd45;color:#171717;font-weight:bold;margin-top:18px}
+#result{white-space:pre-wrap;line-height:1.6}
+</style>
+</head>
+<body>
+<h1>🎬 Magic Cartoon Studio</h1>
+<p>Apni cartoon story banane ka safar shuru karo!</p>
+<div class="card">
+<label>Cartoon story ka naam</label>
+<input id="story" placeholder="Jaise: Jadui Jungle">
+<label>Video type</label>
+<select id="type">
+<option> YouTube Shorts (9:16)</option>
+<option> Long Video (16:9)</option>
+</select>
+<label>Video language</label>
+<select id="lang">
+<option>Hindi</option>
+<option>Hinglish</option>
+</select>
+<button onclick="makeStory()">Story Idea Banao</button>
+<div id="result"></div>
+</div>
+<script>
+function makeStory(){
+let name=document.getElementById('story').value.trim();
+let type=document.getElementById('type').value;
+let lang=document.getElementById('lang').value;
+if(!name){alert('Pehle story ka naam likho');return;}
+document.getElementById('result').textContent=
+'🎥 '+name+'\nVideo: '+type+
+'\nLanguage: '+lang+
+'\n\nScene 1: Ek khoobsurat 3D cartoon duniya mein kahani shuru hoti hai.\n\nScene 2: Hamara hero ek nayi mushkil ka saamna karta hai.\n\nScene 3: Hero himmat aur samajhdari se mushkil hal karta hai.\n\nScene 4: Kahani khushi aur seekh ke saath khatam hoti hai.\n\nYeh abhi demo story hai.';
+}
+</script>
+</body>
+</html>
