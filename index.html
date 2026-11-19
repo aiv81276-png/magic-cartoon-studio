@@ -7,24 +7,43 @@
 <title>Magic Cartoon Studio</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;padding:16px;background:#101426;color:white;font-family:Arial,sans-serif}
+body{margin:0;padding:16px;background:#101426;color:white;font-family:Arial,sans-serif;max-width:800px;margin:auto}
 h1{text-align:center;color:#ffcf5a}
-p{text-align:center;color:#ccd2e5}
-.card{background:#202944;padding:18px;border-radius:16px;margin:18px 0}
+p{color:#ccd2e5;line-height:1.5}
+.card{background:#202944;padding:18px;border-radius:16px;margin:16px 0}
 label{display:block;margin:14px 0 7px}
 input,select,button{width:100%;padding:13px;border:0;border-radius:9px;font-size:16px}
 input,select{background:white;color:#171717}
-button{background:#ffbd45;font-weight:bold;margin-top:16px}
-#result{white-space:pre-wrap;line-height:1.6;margin-top:18px}
+button{background:#ffbd45;color:#171717;font-weight:bold;margin-top:16px}
+button:disabled{opacity:.6}
+.people{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.person{background:#18223b;padding:13px;border-radius:10px}
+.person b{color:#ffcf5a}
+#result{white-space:pre-wrap;line-height:1.6;margin-top:16px;overflow-wrap:anywhere}
 .small{font-size:13px;color:#b9c3dc}
+.status{background:#18223b;padding:12px;border-radius:9px;margin-top:12px}
 </style>
 </head>
 <body>
+
 <h1>🎬 Magic Cartoon Studio</h1>
-<p>Apni Hindi cartoon duniya banao!</p>
+<p style="text-align:center">Apni Hindi cartoon duniya banao!</p>
 
 <div class="card">
-<label>Story ka naam</label>
+<h3>⭐ Hamare Permanent Characters</h3>
+<div class="people">
+<div class="person"><b>Arif</b><br>Hero aur team leader</div>
+<div class="person"><b>Zoya</b><br>Arif ki girlfriend</div>
+<div class="person"><b>Rohan</b><br>Hoshiyaar dost</div>
+<div class="person"><b>Sameer</b><br>Mazaakiya dost</div>
+</div>
+<p class="small">Har scene mein chaaron ka same face, hairstyle aur kapde rakhne ka instruction diya jayega.</p>
+</div>
+
+<div class="card">
+<h3>🎥 Nayi Cartoon Kahani</h3>
+
+<label>Kahani ka naam</label>
 <input id="name" value="Arif aur Rahasyamayi Qila">
 
 <label>Video ki length</label>
@@ -32,10 +51,12 @@ button{background:#ffbd45;font-weight:bold;margin-top:16px}
 <option>30 second</option>
 <option>1 minute</option>
 <option>3 minute</option>
-<option selected>5 minute</option>
+<option>5 minute</option>
 <option>10 minute</option>
 <option>15 minute</option>
 <option>30 minute</option>
+<option>45 minute</option>
+<option>60 minute (1 ghanta)</option>
 </select>
 
 <label>Video format</label>
@@ -44,82 +65,102 @@ button{background:#ffbd45;font-weight:bold;margin-top:16px}
 <option selected>Long Video (16:9)</option>
 </select>
 
-<label>Story type</label>
+<label>Kahani ka type</label>
 <select id="genre">
 <option>Adventure</option>
 <option>Comedy</option>
 <option>Moral Story</option>
-<option>Animal Story</option>
 <option>Fantasy</option>
 <option>Friendship</option>
+<option>Animal Story</option>
 </select>
 
-<label>Language</label>
+<label>Bhasha</label>
 <select id="language">
 <option>Hindi</option>
 <option>Hinglish</option>
 </select>
 
-<button onclick="createStory()">✨ Story aur Scene Prompts Banao</button>
+<button id="make" onclick="createStory()">✨ Kahani aur Scenes Banao</button>
+<div id="status" class="status">Nayi kahani banane ke liye button dabao.</div>
 <div id="result"></div>
-<button onclick="copyStory()">📋 Story Copy Karo</button>
 </div>
 
-<p class="small">Abhi story planner demo hai. AI images, Hindi voice aur MP4 generation abhi connect nahi hain.</p>
+<div class="card">
+<h3>📺 YouTube Upload</h3>
+<p>Abhi YouTube account connection aur automatic MP4 video generation configure nahi hain.</p>
+<p class="small">AI animation, Hindi voice, music, subtitles, video rendering aur YouTube upload agle development steps hain. Upload tumhari approval ke baad hi hoga.</p>
+</div>
 
 <script>
-let finalStory="";
+async function createStory(){
+ const name=document.getElementById("name").value.trim();
+ const length=document.getElementById("length").value;
+ const genre=document.getElementById("genre").value;
+ const language=document.getElementById("language").value;
+ const format=document.getElementById("format").value;
+ const button=document.getElementById("make");
+ const status=document.getElementById("status");
+ const result=document.getElementById("result");
 
-function createStory(){
-const name=document.getElementById("name").value.trim();
-if(!name){alert("Story ka naam likho");return;}
+ if(!name){
+  status.textContent="Pehle kahani ka naam likho.";
+  return;
+ }
 
-const length=document.getElementById("length").value;
-const format=document.getElementById("format").value;
-const genre=document.getElementById("genre").value;
-const language=document.getElementById("language").value;
+ button.disabled=true;
+ button.textContent="⏳ Kahani ban rahi hai...";
+ status.textContent="Server se kahani mangayi ja rahi hai...";
+ result.textContent="";
 
-const count=length==="30 second"?3:
-length==="1 minute"?4:
-length==="3 minute"?6:
-length==="5 minute"?22:
-length==="10 minute"?12:
-length==="15 minute"?16:20;
+ try{
+  const response=await fetch("/api/story",{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({name,length,genre,language,format})
+  });
 
-let scenes="";
-for(let i=1;i<=count;i++){
-scenes+="SCENE "+i+"\n";
-scenes+=i===1?
-"Opening: Arif discovers a mysterious old fort. Wide cinematic shot.":
-i===count?
-"Final: Arif solves the mystery and returns home safely.":
-"Arif explores the mysterious fort, discovers clues and faces a new adventure.";
-scenes+="\nCharacter consistency: Arif ka same face, same clothes aur same 3D cartoon appearance.\n\n";
-}
+  const data=await response.json();
 
-finalStory=
-"🎬 "+name+"\n"+
-"Length: "+length+"\nFormat: "+format+
-"\nGenre: "+genre+"\nLanguage: "+language+
-"\n\nCHARACTER: Arif, consistent 3D cartoon appearance.\n\n"+
-"STORY:\nArif ek rahasyamayi qile ke paas pahunchta hai. Qile ke andar use purane raaz, ajeeb awaazein aur mushkil paheliyan milti hain. Apni himmat aur samajhdari se Arif qile ka raaz suljhata hai aur ek nayi seekh lekar ghar laut ta hai.\n\n"+
-"SCENE BY SCENE PROMPTS:\n\n"+scenes+
-"VOICEOVER: Natural expressive Hindi narration.\n"+
-"MUSIC: Original cartoon background music.\n"+
-"SUBTITLES: Hindi subtitles.\n";
+  if(!response.ok) throw new Error(data.error || "Kahani nahi bani.");
 
-document.getElementById("result").textContent=finalStory;
-}
+  const s=data.story;
+  let output="🎬 "+s.name+"\n";
+  output+="Video: "+s.length+"\n";
+  output+="Format: "+s.format+"\n";
+  output+="Genre: "+s.genre+"\n\n";
 
-function copyStory(){
-if(!finalStory){alert("Pehle story banao");return;}
-if(navigator.clipboard){
-navigator.clipboard.writeText(finalStory)
-.then(()=>alert("Story copy ho gayi!"))
-.catch(()=>alert("Story ko long press karke copy karo."));
-}else{
-alert("Story ko long press karke copy karo.");
-}
+  output+="CHARACTERS\n";
+  (s.characters || [
+   "Arif - Hero",
+   "Zoya - Arif ki girlfriend",
+   "Rohan - Dost",
+   "Sameer - Dost"
+  ]).forEach(x=>output+=x+"\n");
+
+  output+="\nKAHANI\n"+s.synopsis+"\n\n";
+  output+="SCENE BY SCENE\n";
+
+  s.scenes.forEach(scene=>{
+   output+="\nScene "+scene.number+"\n";
+   output+=scene.prompt+"\n";
+   output+="Visual: "+scene.visual+"\n";
+  });
+
+  output+="\nVOICEOVER: "+s.production.voiceover+"\n";
+  output+="MUSIC: "+s.production.music+"\n";
+  output+="SUBTITLES: "+s.production.subtitles+"\n";
+  output+="\nNOTE: "+data.notice;
+
+  result.textContent=output;
+  status.textContent="Storyboard taiyar hai!";
+
+ }catch(error){
+  status.textContent="Error: "+error.message;
+ }finally{
+  button.disabled=false;
+  button.textContent="✨ Kahani aur Scenes Banao";
+ }
 }
 </script>
 </body>
