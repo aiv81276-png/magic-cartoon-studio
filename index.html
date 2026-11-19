@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="hi">
 <head>
@@ -6,12 +7,13 @@
 <title>Magic Cartoon Studio</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;padding:18px;background:#101426;color:white;font-family:Arial}
+body{margin:0;padding:16px;background:#101426;color:white;font-family:Arial,sans-serif}
 h1{text-align:center;color:#ffcf5a}
 p{text-align:center;color:#ccd2e5}
 .card{background:#202944;padding:18px;border-radius:16px;margin:18px 0}
 label{display:block;margin:14px 0 7px}
 input,select,button{width:100%;padding:13px;border:0;border-radius:9px;font-size:16px}
+input,select{background:white;color:#171717}
 button{background:#ffbd45;font-weight:bold;margin-top:16px}
 #result{white-space:pre-wrap;line-height:1.6;margin-top:18px}
 .small{font-size:13px;color:#b9c3dc}
@@ -19,25 +21,29 @@ button{background:#ffbd45;font-weight:bold;margin-top:16px}
 </head>
 <body>
 <h1>🎬 Magic Cartoon Studio</h1>
-<p>Apni original cartoon duniya banao!</p>
+<p>Apni Hindi cartoon duniya banao!</p>
+
 <div class="card">
 <label>Story ka naam</label>
-<input id="name" placeholder="Jaise: Jadui Jungle">
+<input id="name" value="Arif aur Rahasyamayi Qila">
+
 <label>Video ki length</label>
 <select id="length">
-<option value="30 second">30 second</option>
-<option value="60 second">1 minute</option>
-<option value="3 minute">3 minute</option>
-<option value="5 minute">5 minute</option>
-<option value="10 minute">10 minute</option>
-<option value="15 minute">15 minute</option>
-<option value="30 minute">30 minute</option>
+<option>30 second</option>
+<option>1 minute</option>
+<option>3 minute</option>
+<option selected>5 minute</option>
+<option>10 minute</option>
+<option>15 minute</option>
+<option>30 minute</option>
 </select>
+
 <label>Video format</label>
 <select id="format">
 <option>YouTube Shorts (9:16)</option>
-<option>Long Video (16:9)</option>
+<option selected>Long Video (16:9)</option>
 </select>
+
 <label>Story type</label>
 <select id="genre">
 <option>Adventure</option>
@@ -47,43 +53,73 @@ button{background:#ffbd45;font-weight:bold;margin-top:16px}
 <option>Fantasy</option>
 <option>Friendship</option>
 </select>
+
 <label>Language</label>
 <select id="language">
 <option>Hindi</option>
 <option>Hinglish</option>
 </select>
+
 <button onclick="createStory()">✨ Story aur Scene Prompts Banao</button>
 <div id="result"></div>
 <button onclick="copyStory()">📋 Story Copy Karo</button>
 </div>
-<p class="small">Abhi ye offline demo story planner hai. AI images, voice aur video generation abhi connect nahi hain.</p>
+
+<p class="small">Abhi story planner demo hai. AI images, Hindi voice aur MP4 generation abhi connect nahi hain.</p>
+
 <script>
 let finalStory="";
+
 function createStory(){
-let n=document.getElementById("name").value.trim();
-if(!n){alert("Pehle story ka naam likho");return;}
-let len=document.getElementById("length").value;
-let format=document.getElementById("format").value;
-let genre=document.getElementById("genre").value;
-let lang=document.getElementById("language").value;
-let scenes=len==="30 second"?3:len==="60 second"?4:len==="3 minute"?6:len==="5 minute"?8:len==="10 minute"?12:len==="15 minute"?16:20;
-let text="🎬 "+n+"\nLength: "+len+"\nFormat: "+format+"\nType: "+genre+"\nLanguage: "+lang+"\n\n";
-text+="ORIGINAL 3D CARTOON STORY\n\n";
-text+="Ek khoobsurat 3D cartoon duniya mein "+n+" ki kahani shuru hoti hai. Hamara hero ek nayi adventure par nikalta hai. Raaste mein use mushkilein, naye dost aur ek romanchak challenge milta hai. Apni himmat aur samajhdari se woh challenge hal karta hai aur sabko ek achhi seekh deta hai.\n\n";
-text+="SCENE BY SCENE PROMPTS\n\n";
-for(let i=1;i<=scenes;i++){
-text+="Scene "+i+": "+(i===1?"Establishing shot: "+n+" ki khoobsurat original 3D cartoon duniya, bright colors, cinematic lighting.":i===scenes?"Final scene: hero khushi se apne doston ke saath, warm cinematic ending.":"Hero ka agla adventure, expressive original 3D cartoon characters, detailed background, cinematic camera movement.")+"\n\n";
+const name=document.getElementById("name").value.trim();
+if(!name){alert("Story ka naam likho");return;}
+
+const length=document.getElementById("length").value;
+const format=document.getElementById("format").value;
+const genre=document.getElementById("genre").value;
+const language=document.getElementById("language").value;
+
+const count=length==="30 second"?3:
+length==="1 minute"?4:
+length==="3 minute"?6:
+length==="5 minute"?22:
+length==="10 minute"?12:
+length==="15 minute"?16:20;
+
+let scenes="";
+for(let i=1;i<=count;i++){
+scenes+="SCENE "+i+"\n";
+scenes+=i===1?
+"Opening: Arif discovers a mysterious old fort. Wide cinematic shot.":
+i===count?
+"Final: Arif solves the mystery and returns home safely.":
+"Arif explores the mysterious fort, discovers clues and faces a new adventure.";
+scenes+="\nCharacter consistency: Arif ka same face, same clothes aur same 3D cartoon appearance.\n\n";
 }
-text+="VOICEOVER: "+lang+" mein natural, expressive storytelling voice.\n";
-text+="MUSIC: Original cheerful cartoon background music.\n";
-text+="SUBTITLES: "+lang+" subtitles.\n";
-finalStory=text;
-document.getElementById("result").textContent=text;
+
+finalStory=
+"🎬 "+name+"\n"+
+"Length: "+length+"\nFormat: "+format+
+"\nGenre: "+genre+"\nLanguage: "+language+
+"\n\nCHARACTER: Arif, consistent 3D cartoon appearance.\n\n"+
+"STORY:\nArif ek rahasyamayi qile ke paas pahunchta hai. Qile ke andar use purane raaz, ajeeb awaazein aur mushkil paheliyan milti hain. Apni himmat aur samajhdari se Arif qile ka raaz suljhata hai aur ek nayi seekh lekar ghar laut ta hai.\n\n"+
+"SCENE BY SCENE PROMPTS:\n\n"+scenes+
+"VOICEOVER: Natural expressive Hindi narration.\n"+
+"MUSIC: Original cartoon background music.\n"+
+"SUBTITLES: Hindi subtitles.\n";
+
+document.getElementById("result").textContent=finalStory;
 }
+
 function copyStory(){
 if(!finalStory){alert("Pehle story banao");return;}
-if(navigator.clipboard){navigator.clipboard.writeText(finalStory).then(()=>alert("Story copy ho gayi!")).catch(()=>alert("Story ko long press karke copy karo."));}
-else{alert("Story ko long press karke copy karo.");}
+if(navigator.clipboard){
+navigator.clipboard.writeText(finalStory)
+.then(()=>alert("Story copy ho gayi!"))
+.catch(()=>alert("Story ko long press karke copy karo."));
+}else{
+alert("Story ko long press karke copy karo.");
+}
 }
 </script>
 </body>
