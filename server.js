@@ -1,12 +1,25 @@
 
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 
 const app = express();
-app.use(cors());
-app.use(express.json({ limit: "5mb" }));
-
 const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.static(path.join(__dirname, "public")));
+
+const CHARACTERS = [
+  { name: "Arif", role: "Hero aur team leader" },
+  { name: "Zoya", role: "Arif ki girlfriend" },
+  { name: "Rohan", role: "Hoshiyar dost" },
+  { name: "Sameer", role: "Mazaakiya dost" }
+];
+
+// Temporary history: server restart hone par reset hogi.
+// Permanent history ke liye database baad mein connect hoga.
+const episodes = [];
 
 const durations = {
   "30 second": 3,
@@ -20,319 +33,216 @@ const durations = {
   "60 minute (1 ghanta)": 120
 };
 
-const characters = [
-  { name: "Arif", role: "Hero aur team leader" },
-  { name: "Zoya", role: "Arif ki girlfriend" },
-  { name: "Rohan", role: "Hoshiyaar dost" },
-  { name: "Sameer", role: "Mazaakiya dost" }
-];
-
-const episodes = [];
-
-function makeStory(name, genre, count) {
-  const beats = [
-    "Chaaron dost ek anokhi jagah par pahunchte hain.",
-    "Arif ko ek rahasyamayi nishaan milta hai.",
-    "Zoya ko ek chhupa hua raasta dikhta hai.",
-    "Rohan ek mushkil paheli samajhne ki koshish karta hai.",
-    "Sameer ko ek ajeeb awaaz sunai deti hai.",
-    "Chaaron milkar pehli mushkil paar karte hain.",
-    "Arif ek gupt darwaza kholta hai.",
-    "Zoya ko ek zaroori suraag milta hai.",
-    "Rohan paheli ka hal nikalta hai.",
-    "Sameer apne doston ko khatre se bachata hai.",
-    "Chaaron ko asli rahasya pata chalta hai.",
-    "Dost milkar apna mission poora karte hain."
-  ];
-
-  return {
-    name,
-    genre,
-    synopsis:
-      "Arif, Zoya, Rohan aur Sameer ki ek nayi " +
-      genre.toLowerCase() +
-      " kahani. Chaaron dost milkar ek mushkil safar par nikalte hain aur milkar rahasya suljhate hain.",
-    characters,
-    characterConsistency:
-      "Har scene mein same face, hairstyle, kapde aur character design.",
-    scenes: Array.from({ length: count }, (_, i) => ({
-      number: i + 1,
-      prompt: beats[i % beats.length],
-      visual:
-        "Original 3D cartoon scene. Arif, Zoya, Rohan aur Sameer. " +
-        "Same character appearance in every scene. Cinematic 3D animation.",
-      narration: beats[i % beats.length],
-      subtitle: beats[i % beats.length]
-    }))
-  };
-}
-
 app.get("/api/health", (req, res) => {
-  res.json({ success: true, status: "online" });
+  res.json({
+    success: true,
+    message: "Magic Cartoon Studio server running"
+  });
 });
 
 app.get("/api/production-status", (req, res) => {
   res.json({
-    storyGenerator: "Ready",
+    storyGenerator: process.env.OPENAI_API_KEY
+      ? "Connected"
+      : "API key required",
     characterProfiles: "Ready",
-    imageGeneration: process.env.IMAGE_API_KEY
-      ? "Configured"
-      : "Not connected",
-    videoGeneration: process.env.VIDEO_API_KEY
-      ? "Configured"
-      : "Not connected",
-    hindiVoice: process.env.TTS_API_KEY
-      ? "Configured"
-      : "Not connected",
-    database: process.env.DATABASE_URL
-      ? "Configured"
-      : "Not connected",
-    youtube: process.env.YOUTUBE_CLIENT_ID &&
-      process.env.YOUTUBE_CLIENT_SECRET
-      ? "Configured"
-      : "Not connected",
+    imageGeneration: "Not connected",
+    videoGeneration: "Not connected",
+    hindiVoice: "Not connected",
+    database: "Temporary memory only",
+    youtube: "Not connected",
     automaticDailySchedule: "Not configured",
     uploadApproval: "Required before publishing"
   });
 });
 
-app.get("/api/characters", (req, res) => {
-  res.json({ success: true, characters });
-});
-
 app.get("/api/episodes", (req, res) => {
   res.json({
     success: true,
-    episodes: episodes.map(e => ({
-      id: e.id,
-      name: e.name,
-      length: e.length,
-      status: e.status
-    }))
+    episodes
   });
 });
 
-app.post("/api/story", (req, res) => {
-  const {
-    name,
-    length = "5 minute",
-    genre = "Adventure",
-    language = "Hindi",
-    format = "Long Video (16:9)"
-  } = req.body || {};
+app.post("/api/story", async (req, res) => {
+  try {
+    const {
+      name,
+      length = "5 minute",
+      genre = "Adventure",
+      language = "Hindi",
+      format = "Long Video (16:9)"
+    } = req.body || {};
 
-  if (!name || typeof name !== "string") {
-    return res.status(400).json({
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(503).json({
+        success: false,
+        error: "Render mein OPENAI_API_KEY set karna zaroori hai."
+      });
+    }
+
+    if (!name || typeof name !== "string" || !name.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: "Kahani ka naam zaroori hai."
+      });
+    }
+
+    if (!Object.prototype.hasOwnProperty.call(durations, length)) {
+      return res.status(400).json({
+        success: false,
+        error: "Video length valid nahi hai."
+      });
+    }
+
+    const previousTitles = episodes
+      .slice(0, 20)
+      .map(e => e.name);
+
+    const sceneCount = durations[length];
+
+    const prompt = `
+Tum Magic Cartoon Studio ke professional Hindi cartoon
+writer aur storyboard director ho.
+
+Ek bilkul nayi, original aur poori kahani banao.
+Pichhli kahaniyon ko repeat mat karo.
+
+Permanent characters:
+1. Arif - hero aur team leader
+2. Zoya - Arif ki girlfriend
+3. Rohan - hoshiyar dost
+4. Sameer - mazaakiya dost
+
+Chaaron characters har scene mein rahenge.
+Unka face, hairstyle, kapde aur character design
+har scene mein bilkul consistent rehna chahiye.
+
+Kahani ka naam: ${name}
+Genre: ${genre}
+Language: ${language}
+Video duration: ${length}
+Format: ${format}
+Total scenes: ${sceneCount}
+
+Pichhle episode titles:
+${previousTitles.join(", ") || "Abhi koi episode nahi"}
+
+Kahani mein shuruaat, interesting problem, adventure,
+dialogues, suspense aur satisfying ending honi chahiye.
+
+Har scene ke liye:
+- Scene number
+- Scene description
+- Visual generation prompt
+- Hindi narration
+- Character dialogues
+- Sound effects
+- Subtitle
+
+Sirf valid JSON return karo. Markdown nahi.
+
+JSON format:
+{
+  "synopsis": "Kahani ka saar",
+  "fullStory": "Poori kahani",
+  "characters": [
+    {"name":"Arif","role":"Hero aur team leader"},
+    {"name":"Zoya","role":"Arif ki girlfriend"},
+    {"name":"Rohan","role":"Hoshiyar dost"},
+    {"name":"Sameer","role":"Mazaakiya dost"}
+  ],
+  "characterConsistency": "Same face, hairstyle and clothes",
+  "scenes": [
+    {
+      "number": 1,
+      "description": "Scene description",
+      "visual": "Detailed visual prompt",
+      "narration": "Hindi narration",
+      "dialogue": "Hindi dialogues",
+      "sound": "Sound effects",
+      "subtitle": "Hindi subtitle"
+    }
+  ]
+}
+`;
+
+    const response = await fetch(
+      "https://api.openai.com/v1/responses",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
+          input: prompt,
+          max_output_tokens: 12000
+        })
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error("OpenAI error:", result);
+      return res.status(502).json({
+        success: false,
+        error: "AI kahani generate nahi kar paya. API settings check karo."
+      });
+    }
+
+    const text = (result.output || [])
+      .flatMap(item => item.content || [])
+      .filter(item => item.type === "output_text")
+      .map(item => item.text)
+      .join("\n");
+
+    if (!text) {
+      throw new Error("AI response mein kahani nahi mili.");
+    }
+
+    const cleaned = text
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/\s*```$/, "")
+      .trim();
+
+    const story = JSON.parse(cleaned);
+
+    if (!story.synopsis || !Array.isArray(story.scenes)) {
+      throw new Error("AI ne valid storyboard nahi diya.");
+    }
+
+    const episode = {
+      id: Date.now().toString(),
+      name: name.trim(),
+      length,
+      genre,
+      language,
+      format,
+      status: "Storyboard ready",
+      createdAt: new Date().toISOString(),
+      story
+    };
+
+    episodes.unshift(episode);
+
+    return res.json({
+      success: true,
+      episode,
+      notice:
+        "Storyboard ready hai. Images, animation, Hindi voice, MP4 rendering aur YouTube upload abhi connect nahi hain."
+    });
+
+  } catch (error) {
+    console.error("Story error:", error);
+
+    return res.status(500).json({
       success: false,
-      error: "Kahani ka naam likho."
+      error: "Kahani banane mein dikkat hui: " + error.message
     });
   }
-
-  if (!Object.prototype.hasOwnProperty.call(durations, length)) {
-    return res.status(400).json({
-      success: false,
-      error: "Video length valid nahi hai."
-    });
-  }
-
-  const story = makeStory(
-    name.trim(),
-    genre,
-    durations[length]
-  );
-
-  const episode = {
-    id: Date.now().toString(),
-    name: name.trim(),
-    length,
-    language,
-    format,
-    status: "Storyboard ready",
-    story,
-    createdAt: new Date().toISOString()
-  };
-
-  episodes.unshift(episode);
-
-  res.json({
-    success: true,
-    episode,
-    notice:
-      "Storyboard ready hai. Actual images, animation, voice aur MP4 ke liye generation providers connect karne honge."
-  });
-});
-
-app.get("/api/episode/:id", (req, res) => {
-  const episode = episodes.find(e => e.id === req.params.id);
-
-  if (!episode) {
-    return res.status(404).json({
-      success: false,
-      error: "Episode nahi mila."
-    });
-  }
-
-  res.json({ success: true, episode });
-});
-
-app.get("/", (req, res) => {
-  res.send(`<!DOCTYPE html>
-<html lang="hi">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Magic Cartoon Studio</title>
-<style>
-*{box-sizing:border-box}
-body{margin:0;padding:16px;background:#101426;color:white;font-family:Arial;max-width:850px;margin:auto}
-h1{color:#ffcf5a;text-align:center}
-.card{background:#202944;padding:18px;border-radius:15px;margin:15px 0}
-label{display:block;margin:13px 0 7px}
-input,select,button{width:100%;padding:13px;border:0;border-radius:9px;font-size:16px}
-input,select{background:white;color:#111}
-button{background:#ffbd45;color:#111;font-weight:bold;margin-top:15px}
-.person{background:#18223b;padding:12px;border-radius:9px}
-.people{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.gold{color:#ffcf5a}
-#result{white-space:pre-wrap;line-height:1.6;overflow-wrap:anywhere}
-.small{color:#bdc7df;font-size:13px;line-height:1.5}
-.status{background:#18223b;padding:12px;border-radius:9px;margin-top:12px}
-</style>
-</head>
-<body>
-<h1>🎬 Magic Cartoon Studio</h1>
-<p style="text-align:center">Hindi Cartoon Video Creation Studio</p>
-
-<div class="card">
-<h3>⭐ Permanent Characters</h3>
-<div class="people">
-<div class="person"><b class="gold">Arif</b><br>Hero</div>
-<div class="person"><b class="gold">Zoya</b><br>Arif ki girlfriend</div>
-<div class="person"><b class="gold">Rohan</b><br>Hoshiyaar dost</div>
-<div class="person"><b class="gold">Sameer</b><br>Mazaakiya dost</div>
-</div>
-<p class="small">Sabhi characters ka design har episode mein consistent rakhne ka instruction diya jayega.</p>
-</div>
-
-<div class="card">
-<h3>🎥 Naya Episode Banao</h3>
-<label>Kahani ka naam</label>
-<input id="name" value="Arif aur Rahasyamayi Qila">
-
-<label>Video length</label>
-<select id="length">
-<option>30 second</option>
-<option>1 minute</option>
-<option>3 minute</option>
-<option>5 minute</option>
-<option>10 minute</option>
-<option>15 minute</option>
-<option>30 minute</option>
-<option>45 minute</option>
-<option>60 minute (1 ghanta)</option>
-</select>
-
-<label>Video format</label>
-<select id="format">
-<option>Long Video (16:9)</option>
-<option>YouTube Shorts (9:16)</option>
-</select>
-
-<label>Kahani ka type</label>
-<select id="genre">
-<option>Adventure</option>
-<option>Comedy</option>
-<option>Fantasy</option>
-<option>Friendship</option>
-<option>Moral Story</option>
-</select>
-
-<label>Language</label>
-<select id="language">
-<option>Hindi</option>
-<option>Hinglish</option>
-</select>
-
-<button onclick="createStory()">✨ Naya Episode Banao</button>
-<div id="status" class="status">Ready</div>
-<div id="result"></div>
-</div>
-
-<div class="card">
-<h3>📚 Episode History</h3>
-<button onclick="loadEpisodes()">Episode list dekho</button>
-<div id="history"></div>
-</div>
-
-<div class="card">
-<h3>⚙️ Production Status</h3>
-<button onclick="loadStatus()">Connection check karo</button>
-<div id="production"></div>
-</div>
-
-<div class="card">
-<h3>📺 YouTube</h3>
-<p class="small">YouTube upload tabhi hoga jab secure Google authorization aur video generation setup complete ho. Har public upload se pehle tumhari approval zaroori hogi.</p>
-</div>
-
-<script>
-async function createStory(){
- const status=document.getElementById("status");
- const result=document.getElementById("result");
- status.textContent="Episode ban raha hai...";
- result.textContent="";
- try{
-  const response=await fetch("/api/story",{
-   method:"POST",
-   headers:{"Content-Type":"application/json"},
-   body:JSON.stringify({
-    name:document.getElementById("name").value,
-    length:document.getElementById("length").value,
-    genre:document.getElementById("genre").value,
-    language:document.getElementById("language").value,
-    format:document.getElementById("format").value
-   })
-  });
-  const data=await response.json();
-  if(!response.ok)throw new Error(data.error);
-  const e=data.episode;
-  let out="🎬 "+e.name+"\\n";
-  out+="Length: "+e.length+"\\n\\n";
-  out+="KAHANI\\n"+e.story.synopsis+"\\n\\n";
-  out+="CHARACTERS\\n";
-  e.story.characters.forEach(c=>out+=c.name+" - "+c.role+"\\n");
-  out+="\\nSCENES\\n";
-  e.story.scenes.forEach(s=>{
-   out+="\\nScene "+s.number+"\\n"+s.prompt+"\\n";
-   out+="Visual: "+s.visual+"\\n";
-  });
-  result.textContent=out+"\\n"+data.notice;
-  status.textContent="Storyboard ready!";
- }catch(err){
-  status.textContent="Error: "+err.message;
- }
-}
-async function loadEpisodes(){
- const box=document.getElementById("history");
- try{
-  const r=await fetch("/api/episodes");
-  const d=await r.json();
-  box.textContent=d.episodes.length
-   ? d.episodes.map(e=>e.name+" — "+e.length+" — "+e.status).join("\\n")
-   : "Abhi koi episode nahi hai.";
- }catch(e){box.textContent="History load nahi hui."}
-}
-async function loadStatus(){
- const box=document.getElementById("production");
- try{
-  const r=await fetch("/api/production-status");
-  const d=await r.json();
-  box.textContent=Object.entries(d).map(x=>x[0]+": "+x[1]).join("\\n");
- }catch(e){box.textContent="Status load nahi hua."}
-}
-</script>
-</body>
-</html>`);
 });
 
 app.listen(PORT, () => {
