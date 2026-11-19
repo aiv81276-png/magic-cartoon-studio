@@ -1,4 +1,3 @@
-
 const express = require("express");
 const cors = require("cors");
 
@@ -22,7 +21,9 @@ const sceneCounts = {
   "5 minute": 22,
   "10 minute": 12,
   "15 minute": 16,
-  "30 minute": 20
+  "30 minute": 20,
+  "45 minute": 28,
+  "60 minute (1 ghanta)": 36
 };
 
 app.post("/api/story", (req, res) => {
@@ -50,25 +51,33 @@ app.post("/api/story", (req, res) => {
 
   const count = sceneCounts[length];
 
+  const characters = [
+    "Arif - Hero aur team leader",
+    "Zoya - Arif ki girlfriend",
+    "Rohan - Hoshiyaar dost",
+    "Sameer - Mazaakiya dost"
+  ];
+
   const beats = [
-    "Arif qile ko pehli baar dekhta hai.",
-    "Arif qile ke bade darwaze par purana nishaan dekhta hai.",
-    "Darwaza khulta hai aur andar purana hall nazar aata hai.",
-    "Arif ko deewar par ek paheli milti hai.",
-    "Ek ajeeb awaaz sunai deti hai.",
-    "Arif chhupa hua raasta dhoondhta hai.",
-    "Arif mushkil challenge ka hal nikalta hai.",
-    "Qile ka raaz saamne aane lagta hai.",
-    "Arif ko khazane ka asli maksad pata chalta hai.",
-    "Arif aakhri paheli suljhata hai.",
-    "Qile ka rahasya khul jata hai.",
-    "Arif apne doston ke saath ghar laut ta hai."
+    "Chaaron dost rahasyamayi qile ko dekhte hain.",
+    "Arif qile ke darwaze par ek purana nishaan dekhta hai.",
+    "Zoya ko ek chhupa hua raasta milta hai.",
+    "Rohan deewar par likhi paheli padhta hai.",
+    "Sameer ko ek ajeeb awaaz sunai deti hai.",
+    "Chaaron dost milkar pehli mushkil paar karte hain.",
+    "Arif ek gupt kamre ka darwaza kholta hai.",
+    "Zoya ko qile ke raaz ka ek suraag milta hai.",
+    "Rohan mushkil paheli ka hal nikalta hai.",
+    "Sameer ek anjaane khatre se sabko bachata hai.",
+    "Qile ka asli rahasya saamne aane lagta hai.",
+    "Chaaron dost milkar aakhri challenge poora karte hain."
   ];
 
   const scenes = Array.from({ length: count }, (_, index) => ({
     number: index + 1,
     prompt: beats[index % beats.length],
-    visual: "Original 3D cartoon, Arif ka same face aur same clothes, expressive animation, cinematic lighting."
+    visual:
+      "Original 3D cartoon animation. Arif, Zoya, Rohan aur Sameer ke same face, hairstyle aur clothes har scene mein consistent rahenge. Cinematic lighting."
   }));
 
   res.json({
@@ -79,16 +88,20 @@ app.post("/api/story", (req, res) => {
       genre,
       language,
       format,
-      character: "Arif — har scene mein same face, hairstyle aur clothes.",
-      synopsis: "Arif ek rahasyamayi qile mein pahunchta hai. Paheliyan aur chhupe raaste paar karke woh qile ka raaz suljhata hai.",
+      characters,
+      characterConsistency:
+        "Chaaron characters ka face, hairstyle aur kapde har scene mein same rahenge.",
+      synopsis:
+        "Arif, Zoya, Rohan aur Sameer ek rahasyamayi qile ka raaz suljhane nikalte hain. Chaaron dost milkar paheliyan aur mushkilein paar karte hain.",
       scenes,
       production: {
-        voiceover: "Natural Hindi narration",
+        voiceover: "Natural expressive Hindi narration",
         music: "Original cartoon background music",
         subtitles: "Hindi subtitles"
       }
     },
-    notice: "Yeh storyboard API hai. AI images, animation, voice aur MP4 generation abhi configured nahi hain."
+    notice:
+      "Yeh storyboard API hai. AI animation, voice, MP4 rendering aur YouTube upload ke liye alag services configure karni hongi."
   });
 });
 
