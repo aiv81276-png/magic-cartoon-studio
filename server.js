@@ -1,308 +1,334 @@
 
-<!DOCTYPE html>
-<html lang="hi">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Magic Cartoon Studio</title>
-<style>
-*{box-sizing:border-box}
-body{margin:0;padding:16px;background:#101426;color:white;font-family:Arial,sans-serif;max-width:800px;margin:auto}
-h1{color:#ffcf5a;text-align:center}
-p{color:#ccd2e5;line-height:1.5}
-.card{background:#202944;padding:18px;border-radius:16px;margin:16px 0}
-label{display:block;margin:14px 0 7px}
-input,select,button{width:100%;padding:13px;border:0;border-radius:9px;font-size:16px}
-input,select{background:white;color:#171717}
-button{background:#ffbd45;color:#171717;font-weight:bold;margin-top:12px}
-button:disabled{opacity:.6}
-.secondary{background:#344363;color:white}
-.people{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.person{background:#18223b;padding:13px;border-radius:10px}
-.person b{color:#ffcf5a}
-.status{background:#18223b;padding:12px;border-radius:9px;margin-top:12px}
-#result{white-space:pre-wrap;line-height:1.6;margin-top:16px;overflow-wrap:anywhere}
-.small{font-size:13px;color:#b9c3dc}
-#player{display:none;background:#18223b;padding:14px;border-radius:12px;margin-top:14px}
-#subtitle{font-size:18px;line-height:1.5;color:#ffdf91;margin:12px 0}
-</style>
-</head>
-<body>
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
 
-<h1>🎬 Magic Cartoon Studio</h1>
-<p style="text-align:center">Your Hindi Cartoon Story Studio</p>
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-<div class="card">
-<h3>⭐ Permanent Characters</h3>
-<div class="people">
-<div class="person"><b>Arif</b><br>Hero and team leader</div>
-<div class="person"><b>Zoya</b><br>Arif's girlfriend</div>
-<div class="person"><b>Rohan</b><br>Smart friend</div>
-<div class="person"><b>Sameer</b><br>Funny friend</div>
-</div>
-<p class="small">All four characters are included in every story.</p>
-</div>
+app.use(cors());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.static(path.join(__dirname, "public")));
 
-<div class="card">
-<h3>🎥 Create a New Cartoon Story</h3>
+const CHARACTERS = [
+  { name: "Arif", role: "Hero aur team leader" },
+  { name: "Zoya", role: "Arif ki girlfriend" },
+  { name: "Rohan", role: "Hoshiyar dost" },
+  { name: "Sameer", role: "Mazaakiya dost" }
+];
 
-<label>Story name</label>
-<input id="name" value="Arif aur Jadui Kitaab">
+const episodes = [];
 
-<label>Video duration</label>
-<select id="length">
-<option>30 second</option>
-<option>1 minute</option>
-<option>3 minute</option>
-<option selected>5 minute</option>
-<option>10 minute</option>
-<option>15 minute</option>
-<option>30 minute</option>
-<option>45 minute</option>
-<option>60 minute (1 ghanta)</option>
-</select>
+const durations = {
+  "30 second": 3,
+  "1 minute": 4,
+  "3 minute": 6,
+  "5 minute": 10,
+  "10 minute": 20,
+  "15 minute": 30,
+  "30 minute": 60,
+  "45 minute": 90,
+  "60 minute (1 ghanta)": 120
+};
 
-<label>Video format</label>
-<select id="format">
-<option>YouTube Shorts (9:16)</option>
-<option selected>Long Video (16:9)</option>
-</select>
+const plots = [
+  {
+    place: "purane ghadi ghar",
+    problem: "har raat neeli roshni chamakti hai",
+    clue: "ek purana naksha aur chamakta compass",
+    twist: "ghadi ghar ke neeche ek bhooli hui library milti hai",
+    lesson: "himmat aur dosti se mushkil hal hoti hai"
+  },
+  {
+    place: "jadui jungle",
+    problem: "ek chhota robot madad ke liye signal bhejta hai",
+    clue: "ped par bana ajeeb nishaan",
+    twist: "robot jungle ke janwaron ki raksha kar raha hota hai",
+    lesson: "technology ka sahi istemal sabki madad karta hai"
+  },
+  {
+    place: "nadi ka kinara",
+    problem: "gaon ka paani achanak gayab hone lagta hai",
+    clue: "mitti mein chhote pairon ke nishaan",
+    twist: "paani ek bade pathar ke peeche atak gaya hota hai",
+    lesson: "milkar kaam karne se har samasya hal hoti hai"
+  },
+  {
+    place: "school ka science fair",
+    problem: "ek jadui dibba apne aap khul jata hai",
+    clue: "dibbe par chaar symbols aur ek paheli",
+    twist: "dibba ek purani learning machine hoti hai",
+    lesson: "jigyasa ke saath zimmedari bhi zaroori hai"
+  },
+  {
+    place: "pahadon ka rahasyamayi gaon",
+    problem: "ek anjaan awaaz madad ke liye bulati hai",
+    clue: "chamakta patthar aur purani diary",
+    twist: "awaaz ek phanse hue dost ki hoti hai",
+    lesson: "dusron ki madad karna sabse badi bahaduri hai"
+  },
+  {
+    place: "purana railway station",
+    problem: "ek train bina driver ke chalne lagti hai",
+    clue: "ek ticket aur purani ghadi",
+    twist: "train mein phanse logon ko bachana zaroori hota hai",
+    lesson: "samajhdari aur sahas se jaan bach sakti hai"
+  },
+  {
+    place: "samundar ka kinara",
+    problem: "samundar se ek ajeeb sandesh aata hai",
+    clue: "ek sheeshe ki bottle aur chamakta patthar",
+    twist: "ek chhota samudri jeev madad maang raha hota hai",
+    lesson: "prakriti aur janwaron ki raksha karni chahiye"
+  },
+  {
+    place: "rang-biranga mela",
+    problem: "mele ke saare khilaune achanak gayab ho jaate hain",
+    clue: "ek laal ribbon aur chhoti chaabi",
+    twist: "khilaune ek purane jadui kamre mein chhupe hote hain",
+    lesson: "sachchai aur teamwork ki hamesha jeet hoti hai"
+  }
+];
 
-<label>Story type</label>
-<select id="genre">
-<option>Adventure</option>
-<option>Comedy</option>
-<option>Moral Story</option>
-<option>Fantasy</option>
-<option>Friendship</option>
-<option>Animal Story</option>
-</select>
+function createFreeStory(name, genre, length, language, format) {
+  const sceneCount = durations[length];
 
-<label>Language</label>
-<select id="language">
-<option>Hindi</option>
-<option>Hinglish</option>
-</select>
+  const plot = plots[
+    Math.floor(Math.random() * plots.length)
+  ];
 
-<button id="make" onclick="createStory()">✨ Generate Story and Scenes</button>
-<div id="status" class="status">Ready to create your story.</div>
-<div id="result"></div>
+  const beats = [
+    {
+      title: "Nayi subah",
+      text: "Arif, Zoya, Rohan aur Sameer " +
+        plot.place + pahunchte hain."
+    },
+    {
+      title: "Ajeeb ghatna",
+      text: "Wahan unhe pata chalta hai ki " +
+        plot.problem + "."
+    },
+    {
+      title: "Jaanch shuru",
+      text: "Rohan sabko samjhata hai ki pehle suraag dhoondhna hoga."
+    },
+    {
+      title: "Pehla suraag",
+      text: "Zoya ko " + plot.clue + " milta hai."
+    },
+    {
+      title: "Mushkil raasta",
+      text: "Raaste mein badi rukawat aati hai, lekin Arif sabka hausla badhata hai."
+    },
+    {
+      title: "Sameer ka idea",
+      text: "Sameer ek mazedaar idea deta hai aur sab hans padte hain."
+    },
+    {
+      title: "Teamwork",
+      text: "Chaaron dost apni alag-alag skills ka istemal karte hain."
+    },
+    {
+      title: "Raaz khulta hai",
+      text: "Aakhir unhe pata chalta hai ki " + plot.twist + "."
+    },
+    {
+      title: "Adventure ka hal",
+      text: "Dost milkar samasya ka hal nikaal lete hain."
+    },
+    {
+      title: "Kahani ki seekh",
+      text: "Arif kehta hai: " + plot.lesson + "."
+    }
+  ];
 
-<div id="player">
-<h3>🔊 Story Narration Preview</h3>
-<div id="sceneTitle">Scene preview</div>
-<div id="subtitle">Yahan scene ka subtitle dikhega.</div>
-<div class="small" id="sceneCount"></div>
+  const scenes = [];
 
-<button onclick="playAll()">▶ Play all scenes</button>
-<button class="secondary" onclick="stopNarration()">⏹ Stop narration</button>
-<button class="secondary" onclick="previousScene()">⏮ Previous scene</button>
-<button class="secondary" onclick="nextScene()">Next scene ⏭</button>
+  for (let i = 0; i < sceneCount; i++) {
+    const beat = beats[i % beats.length];
 
-<p class="small">Hindi voice mobile/browser mein available voice par depend karti hai.</p>
-</div>
-</div>
+    const narration = beat.text;
 
-<div class="card">
-<h3>📺 YouTube Upload</h3>
-<p>Upload approval will always be required before publishing.</p>
-<p class="small">Actual cartoon images, animation, music, MP4 rendering and YouTube upload abhi connect nahi hain.</p>
-</div>
+    scenes.push({
+      number: i + 1,
+      description: beat.title + ": " + narration,
 
-<script>
-let currentScenes = [];
-let currentIndex = 0;
-let isPlayingAll = false;
+      visual:
+        "Family friendly 3D cartoon scene. " +
+        "Arif, Zoya, Rohan and Sameer. " +
+        "Keep same faces, hairstyles and clothes " +
+        "in every scene. " + narration +
+        " Cinematic lighting. " + format,
 
-async function createStory(){
- const name=document.getElementById("name").value.trim();
- const length=document.getElementById("length").value;
- const genre=document.getElementById("genre").value;
- const language=document.getElementById("language").value;
- const format=document.getElementById("format").value;
- const button=document.getElementById("make");
- const status=document.getElementById("status");
- const result=document.getElementById("result");
+      narration: narration,
 
- stopNarration();
+      dialogue:
+        i === 2
+          ? "Rohan: Pehle humein saboot dhoondhna chahiye. Arif: Hum sab saath chalenge."
+          : i === 5
+          ? "Sameer: Mere paas ek zabardast idea hai! Zoya: Jaldi batao!"
+          : i === 9
+          ? "Arif: " + plot.lesson
+          : "Arif: Chalo dosto, milkar iska hal nikaalte hain!",
 
- if(!name){
-  status.textContent="Please enter a story name.";
-  return;
- }
+      sound: "Cartoon adventure music and scene sound effects",
 
- button.disabled=true;
- button.textContent="⏳ Creating story...";
- status.textContent="Connecting to story generator...";
- result.textContent="";
- document.getElementById("player").style.display="none";
-
- try{
-  const response=await fetch("/api/story",{
-   method:"POST",
-   headers:{"Content-Type":"application/json"},
-   body:JSON.stringify({name,length,genre,language,format})
-  });
-
-  const data=await response.json();
-
-  if(!response.ok){
-   throw new Error(data.error || "Story generation failed.");
+      subtitle: narration
+    });
   }
 
-  const episode=data.episode;
-  const story=episode && episode.story;
+  return {
+    synopsis:
+      name + " ek " + genre + " kahani hai. " +
+      "Arif, Zoya, Rohan aur Sameer " +
+      plot.place + " mein ek adventure par nikalte hain. " +
+      "Wahan " + plot.problem + ". " +
+      "Suraag ki madad se woh " + plot.twist + ". " +
+      "Kahani ki seekh: " + plot.lesson + ".",
 
-  if(!story || !Array.isArray(story.scenes)){
-   throw new Error("Invalid story response.");
+    fullStory: scenes.map(scene =>
+      "Scene " + scene.number + "\n" +
+      scene.description + "\n" +
+      scene.dialogue
+    ).join("\n\n"),
+
+    characters: CHARACTERS,
+
+    characterConsistency:
+      "Same face, hairstyle and clothes in every scene",
+
+    scenes
+  };
+}
+
+app.get("/api/health", (req, res) => {
+  res.json({
+    success: true,
+    message: "Magic Cartoon Studio server running"
+  });
+});
+
+app.get("/api/production-status", (req, res) => {
+  res.json({
+    storyGenerator: "Free backup available",
+    characterProfiles: "Ready",
+    imageGeneration: "Not connected",
+    videoGeneration: "Not connected",
+    hindiVoice: "Not connected",
+    database: "Temporary memory only",
+    youtube: "Not connected",
+    automaticDailySchedule: "Not configured",
+    uploadApproval: "Required before publishing"
+  });
+});
+
+app.get("/api/episodes", (req, res) => {
+  res.json({
+    success: true,
+    episodes: episodes
+  });
+});
+
+app.get("/api/episode/:id", (req, res) => {
+  const episode = episodes.find(
+    item => item.id === req.params.id
+  );
+
+  if (!episode) {
+    return res.status(404).json({
+      success: false,
+      error: "Episode nahi mila."
+    });
   }
 
-  let output="🎬 "+episode.name+"\n";
-  output+="Duration: "+episode.length+"\n";
-  output+="Format: "+episode.format+"\n";
-  output+="Genre: "+episode.genre+"\n\n";
-
-  output+="📖 STORY SUMMARY\n";
-  output+=(story.synopsis||"")+"\n\n";
-
-  output+="📚 FULL STORY\n";
-  output+=(story.fullStory||"")+"\n\n";
-
-  output+="🎭 CHARACTERS\n";
-
-  (story.characters||[]).forEach(c=>{
-   output+=c.name+" - "+c.role+"\n";
+  res.json({
+    success: true,
+    episode: episode
   });
+});
 
-  output+="\n🎞️ SCENE BY SCENE STORYBOARD\n";
+app.post("/api/story", (req, res) => {
+  try {
+    const {
+      name,
+      length = "5 minute",
+      genre = "Adventure",
+      language = "Hindi",
+      format = "Long Video (16:9)"
+    } = req.body || {};
 
-  story.scenes.forEach(scene=>{
-   output+="\n--------------------\n";
-   output+="SCENE "+scene.number+"\n";
-   output+="Description: "+(scene.description||"")+"\n";
-   output+="Visual: "+(scene.visual||"")+"\n";
-   output+="Hindi Narration: "+(scene.narration||"")+"\n";
-   output+="Dialogue: "+(scene.dialogue||"")+"\n";
-   output+="Sound Effects: "+(scene.sound||"")+"\n";
-   output+="Subtitle: "+(scene.subtitle||"")+"\n";
-  });
+    if (
+      !name ||
+      typeof name !== "string" ||
+      !name.trim()
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: "Kahani ka naam zaroori hai."
+      });
+    }
 
-  output+="\n\n⚠️ "+(data.notice||"Storyboard ready.");
+    if (!Object.prototype.hasOwnProperty.call(durations, length)) {
+      return res.status(400).json({
+        success: false,
+        error: "Video length valid nahi hai."
+      });
+    }
 
-  result.textContent=output;
+    const story = createFreeStory(
+      name.trim(),
+      genre,
+      length,
+      language,
+      format
+    );
 
-  currentScenes=story.scenes;
-  currentIndex=0;
+    const episode = {
+      id: Date.now().toString(),
+      name: name.trim(),
+      length: length,
+      genre: genre,
+      language: language,
+      format: format,
+      status: "Storyboard ready",
+      createdAt: new Date().toISOString(),
+      story: story
+    };
 
-  document.getElementById("player").style.display="block";
-  showCurrentScene();
+    episodes.unshift(episode);
 
-  status.textContent="✅ Story and storyboard generated successfully!";
+    if (episodes.length > 50) {
+      episodes.length = 50;
+    }
 
- }catch(error){
-  status.textContent="❌ Error: "+error.message;
- }finally{
-  button.disabled=false;
-  button.textContent="✨ Generate Story and Scenes";
- }
-}
+    return res.json({
+      success: true,
+      episode: episode,
+      notice:
+        "Free story and storyboard generated. " +
+        "Cartoon images, animation, Hindi voice, " +
+        "MP4 rendering and YouTube upload are not connected yet."
+    });
 
-function showCurrentScene(){
- if(!currentScenes.length)return;
+  } catch (error) {
+    console.error("Story error:", error);
 
- const scene=currentScenes[currentIndex];
-
- document.getElementById("sceneTitle").textContent=
-  "🎬 Scene "+scene.number;
-
- document.getElementById("subtitle").textContent=
-  scene.subtitle||scene.narration||"";
-
- document.getElementById("sceneCount").textContent=
-  "Scene "+(currentIndex+1)+" of "+currentScenes.length;
-}
-
-function speakCurrent(onEnd){
- if(!currentScenes.length)return;
-
- window.speechSynthesis.cancel();
-
- const scene=currentScenes[currentIndex];
- const text=(scene.narration||"")+" "+(scene.dialogue||"");
-
- const utterance=new SpeechSynthesisUtterance(text);
- utterance.lang="hi-IN";
- utterance.rate=0.92;
-
- utterance.onend=()=>{
-  if(onEnd)onEnd();
- };
-
- utterance.onerror=()=>{
-  isPlayingAll=false;
- };
-
- window.speechSynthesis.speak(utterance);
-}
-
-function playAll(){
- if(!currentScenes.length)return;
-
- isPlayingAll=true;
- playSequence();
-}
-
-function playSequence(){
- if(!isPlayingAll||currentIndex>=currentScenes.length){
-  isPlayingAll=false;
-  return;
- }
-
- showCurrentScene();
-
- speakCurrent(()=>{
-  if(!isPlayingAll)return;
-
-  currentIndex++;
-
-  if(currentIndex<currentScenes.length){
-   playSequence();
-  }else{
-   isPlayingAll=false;
-   currentIndex=currentScenes.length-1;
-   showCurrentScene();
+    return res.status(500).json({
+      success: false,
+      error: "Story generate nahi ho paayi: " + error.message
+    });
   }
- });
-}
+});
 
-function stopNarration(){
- isPlayingAll=false;
+app.get("/", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "public", "index.html")
+  );
+});
 
- if("speechSynthesis" in window){
-  window.speechSynthesis.cancel();
- }
-}
-
-function nextScene(){
- stopNarration();
-
- if(currentIndex<currentScenes.length-1){
-  currentIndex++;
- }
-
- showCurrentScene();
-}
-
-function previousScene(){
- stopNarration();
-
- if(currentIndex>0){
-  currentIndex--;
- }
-
- showCurrentScene();
-}
-</script>
-
-</body>
-</html>
+app.listen(PORT, () => {
+  console.log(
+    "Magic Cartoon Studio running on port " + PORT
+  );
+});
+ 
