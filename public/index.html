@@ -8,7 +8,7 @@
 <style>
 *{box-sizing:border-box}
 body{margin:0;padding:16px;background:#101426;color:white;font-family:Arial,sans-serif;max-width:800px;margin:auto}
-h1{text-align:center;color:#ffcf5a}
+h1{color:#ffcf5a;text-align:center}
 p{color:#ccd2e5;line-height:1.5}
 .card{background:#202944;padding:18px;border-radius:16px;margin:16px 0}
 label{display:block;margin:14px 0 7px}
@@ -19,39 +19,39 @@ button:disabled{opacity:.6}
 .people{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .person{background:#18223b;padding:13px;border-radius:10px}
 .person b{color:#ffcf5a}
+.status{background:#18223b;padding:12px;border-radius:9px;margin-top:12px}
 #result{white-space:pre-wrap;line-height:1.6;margin-top:16px;overflow-wrap:anywhere}
 .small{font-size:13px;color:#b9c3dc}
-.status{background:#18223b;padding:12px;border-radius:9px;margin-top:12px}
 </style>
 </head>
 <body>
 
 <h1>🎬 Magic Cartoon Studio</h1>
-<p style="text-align:center">Apni Hindi cartoon duniya banao!</p>
+<p style="text-align:center">Your Hindi Cartoon Story Studio</p>
 
 <div class="card">
-<h3>⭐ Hamare Permanent Characters</h3>
+<h3>⭐ Permanent Characters</h3>
 <div class="people">
-<div class="person"><b>Arif</b><br>Hero aur team leader</div>
-<div class="person"><b>Zoya</b><br>Arif ki girlfriend</div>
-<div class="person"><b>Rohan</b><br>Hoshiyaar dost</div>
-<div class="person"><b>Sameer</b><br>Mazaakiya dost</div>
+<div class="person"><b>Arif</b><br>Hero and team leader</div>
+<div class="person"><b>Zoya</b><br>Arif's girlfriend</div>
+<div class="person"><b>Rohan</b><br>Smart friend</div>
+<div class="person"><b>Sameer</b><br>Funny friend</div>
 </div>
-<p class="small">Har scene mein chaaron ka same face, hairstyle aur kapde rakhne ka instruction diya jayega.</p>
+<p class="small">All four characters are included in every story.</p>
 </div>
 
 <div class="card">
-<h3>🎥 Nayi Cartoon Kahani</h3>
+<h3>🎥 Create a New Cartoon Story</h3>
 
-<label>Kahani ka naam</label>
-<input id="name" value="Arif aur Rahasyamayi Qila">
+<label>Story name</label>
+<input id="name" value="Arif aur Jadui Kitaab">
 
-<label>Video ki length</label>
+<label>Video duration</label>
 <select id="length">
 <option>30 second</option>
 <option>1 minute</option>
 <option>3 minute</option>
-<option>5 minute</option>
+<option selected>5 minute</option>
 <option>10 minute</option>
 <option>15 minute</option>
 <option>30 minute</option>
@@ -65,7 +65,7 @@ button:disabled{opacity:.6}
 <option selected>Long Video (16:9)</option>
 </select>
 
-<label>Kahani ka type</label>
+<label>Story type</label>
 <select id="genre">
 <option>Adventure</option>
 <option>Comedy</option>
@@ -75,21 +75,21 @@ button:disabled{opacity:.6}
 <option>Animal Story</option>
 </select>
 
-<label>Bhasha</label>
+<label>Language</label>
 <select id="language">
 <option>Hindi</option>
 <option>Hinglish</option>
 </select>
 
-<button id="make" onclick="createStory()">✨ Kahani aur Scenes Banao</button>
-<div id="status" class="status">Nayi kahani banane ke liye button dabao.</div>
+<button id="make" onclick="createStory()">✨ Generate Story and Scenes</button>
+<div id="status" class="status">Ready to create your story.</div>
 <div id="result"></div>
 </div>
 
 <div class="card">
 <h3>📺 YouTube Upload</h3>
-<p>Abhi YouTube account connection aur automatic MP4 video generation configure nahi hain.</p>
-<p class="small">AI animation, Hindi voice, music, subtitles, video rendering aur YouTube upload agle development steps hain. Upload tumhari approval ke baad hi hoga.</p>
+<p>Upload approval will always be required before publishing.</p>
+<p class="small">Automatic cartoon images, animation, Hindi voice, music, subtitles, MP4 rendering and YouTube upload are not connected yet.</p>
 </div>
 
 <script>
@@ -104,13 +104,13 @@ async function createStory(){
  const result=document.getElementById("result");
 
  if(!name){
-  status.textContent="Pehle kahani ka naam likho.";
+  status.textContent="Please enter a story name.";
   return;
  }
 
  button.disabled=true;
- button.textContent="⏳ Kahani ban rahi hai...";
- status.textContent="Server se kahani mangayi ja rahi hai...";
+ button.textContent="⏳ Creating story...";
+ status.textContent="Connecting to story generator...";
  result.textContent="";
 
  try{
@@ -122,44 +122,57 @@ async function createStory(){
 
   const data=await response.json();
 
-  if(!response.ok) throw new Error(data.error || "Kahani nahi bani.");
+  if(!response.ok){
+   throw new Error(data.error || "Story generation failed.");
+  }
 
-  const s=data.story;
-  let output="🎬 "+s.name+"\n";
-  output+="Video: "+s.length+"\n";
-  output+="Format: "+s.format+"\n";
-  output+="Genre: "+s.genre+"\n\n";
+  // Server sends the story inside data.episode.story
+  const episode=data.episode;
+  const story=episode && episode.story;
 
-  output+="CHARACTERS\n";
-  (s.characters || [
-   "Arif - Hero",
-   "Zoya - Arif ki girlfriend",
-   "Rohan - Dost",
-   "Sameer - Dost"
-  ]).forEach(x=>output+=x+"\n");
+  if(!story || !Array.isArray(story.scenes)){
+   throw new Error("Invalid story response from server.");
+  }
 
-  output+="\nKAHANI\n"+s.synopsis+"\n\n";
-  output+="SCENE BY SCENE\n";
+  let output="🎬 "+episode.name+"\n";
+  output+="Duration: "+episode.length+"\n";
+  output+="Format: "+episode.format+"\n";
+  output+="Genre: "+episode.genre+"\n\n";
 
-  s.scenes.forEach(scene=>{
-   output+="\nScene "+scene.number+"\n";
-   output+=scene.prompt+"\n";
-   output+="Visual: "+scene.visual+"\n";
+  output+="📖 STORY SUMMARY\n";
+  output+=(story.synopsis || "")+"\n\n";
+
+  output+="📚 FULL STORY\n";
+  output+=(story.fullStory || "")+"\n\n";
+
+  output+="🎭 CHARACTERS\n";
+  (story.characters || []).forEach(character=>{
+   output+=character.name+" - "+character.role+"\n";
   });
 
-  output+="\nVOICEOVER: "+s.production.voiceover+"\n";
-  output+="MUSIC: "+s.production.music+"\n";
-  output+="SUBTITLES: "+s.production.subtitles+"\n";
-  output+="\nNOTE: "+data.notice;
+  output+="\n🎞️ SCENE BY SCENE STORYBOARD\n";
+
+  story.scenes.forEach(scene=>{
+   output+="\n--------------------\n";
+   output+="SCENE "+scene.number+"\n";
+   output+="Description: "+(scene.description || "")+"\n";
+   output+="Visual: "+(scene.visual || "")+"\n";
+   output+="Hindi Narration: "+(scene.narration || "")+"\n";
+   output+="Dialogue: "+(scene.dialogue || "")+"\n";
+   output+="Sound Effects: "+(scene.sound || "")+"\n";
+   output+="Subtitle: "+(scene.subtitle || "")+"\n";
+  });
+
+  output+="\n\n⚠️ "+(data.notice || "Storyboard ready. Video production is not connected yet.");
 
   result.textContent=output;
-  status.textContent="Storyboard taiyar hai!";
+  status.textContent="✅ Story and storyboard generated successfully!";
 
  }catch(error){
-  status.textContent="Error: "+error.message;
+  status.textContent="❌ Error: "+error.message;
  }finally{
   button.disabled=false;
-  button.textContent="✨ Kahani aur Scenes Banao";
+  button.textContent="✨ Generate Story and Scenes";
  }
 }
 </script>
