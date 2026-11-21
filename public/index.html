@@ -7,21 +7,40 @@
 <title>Magic Cartoon Studio</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;padding:16px;background:#101426;color:white;font-family:Arial,sans-serif;max-width:800px;margin:auto}
+body{
+ margin:0;padding:16px;background:#101426;color:white;
+ font-family:Arial,sans-serif;max-width:800px;margin:auto
+}
 h1{color:#ffcf5a;text-align:center}
 p{color:#ccd2e5;line-height:1.5}
 .card{background:#202944;padding:18px;border-radius:16px;margin:16px 0}
 label{display:block;margin:14px 0 7px}
-input,select,button{width:100%;padding:13px;border:0;border-radius:9px;font-size:16px}
+input,select,button{
+ width:100%;padding:13px;border:0;border-radius:9px;font-size:16px
+}
 input,select{background:white;color:#171717}
-button{background:#ffbd45;color:#171717;font-weight:bold;margin-top:16px}
+button{
+ background:#ffbd45;color:#171717;font-weight:bold;margin-top:12px
+}
 button:disabled{opacity:.6}
+.secondary{background:#344363;color:white}
 .people{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .person{background:#18223b;padding:13px;border-radius:10px}
 .person b{color:#ffcf5a}
 .status{background:#18223b;padding:12px;border-radius:9px;margin-top:12px}
 #result{white-space:pre-wrap;line-height:1.6;margin-top:16px;overflow-wrap:anywhere}
 .small{font-size:13px;color:#b9c3dc}
+#player{
+ display:none;background:#18223b;padding:14px;
+ border-radius:12px;margin-top:14px
+}
+#subtitle{
+ font-size:19px;line-height:1.6;color:#ffdf91;
+ margin:14px 0;min-height:55px
+}
+.scene-box{
+ background:#253452;padding:12px;border-radius:10px;margin-top:12px
+}
 </style>
 </head>
 <body>
@@ -81,18 +100,55 @@ button:disabled{opacity:.6}
 <option>Hinglish</option>
 </select>
 
-<button id="make" onclick="createStory()">✨ Generate Story and Scenes</button>
+<button id="make" onclick="createStory()">
+✨ Generate Story and Scenes
+</button>
+
 <div id="status" class="status">Ready to create your story.</div>
 <div id="result"></div>
+
+<div id="player">
+<h3>🔊 Hindi Narration Player</h3>
+
+<div class="scene-box">
+<strong id="sceneTitle">Scene preview</strong>
+<div id="subtitle">Scene subtitle yahan dikhega.</div>
+<div class="small" id="sceneCount"></div>
+</div>
+
+<button onclick="playAll()">▶ Play All Scenes</button>
+<button class="secondary" onclick="pauseNarration()">⏸ Pause</button>
+<button class="secondary" onclick="resumeNarration()">▶ Resume</button>
+<button class="secondary" onclick="speakScene()">🔊 Play This Scene</button>
+<button class="secondary" onclick="stopNarration()">⏹ Stop</button>
+<button class="secondary" onclick="previousScene()">⏮ Previous Scene</button>
+<button class="secondary" onclick="nextScene()">Next Scene ⏭</button>
+
+<p class="small">
+Narration mobile browser ki built-in voice se chalegi.
+Hindi voice ki availability device par depend karti hai.
+</p>
+</div>
 </div>
 
 <div class="card">
-<h3>📺 YouTube Upload</h3>
-<p>Upload approval will always be required before publishing.</p>
-<p class="small">Automatic cartoon images, animation, Hindi voice, music, subtitles, MP4 rendering and YouTube upload are not connected yet.</p>
+<h3>📊 Production Status</h3>
+<p>Story and storyboard: Connected</p>
+<p>Scene narration preview: Browser voice</p>
+<p>Cartoon image generation: Not connected</p>
+<p>Character animation: Not connected</p>
+<p>Background music: Not connected</p>
+<p>MP4 video rendering: Not connected</p>
+<p>YouTube upload: Not connected</p>
+<p class="small">YouTube publishing se pehle tumhari approval zaroori hogi.</p>
 </div>
 
 <script>
+let currentScenes=[];
+let currentIndex=0;
+let isPlayingAll=false;
+let paused=false;
+
 async function createStory(){
  const name=document.getElementById("name").value.trim();
  const length=document.getElementById("length").value;
@@ -103,6 +159,8 @@ async function createStory(){
  const status=document.getElementById("status");
  const result=document.getElementById("result");
 
+ stopNarration();
+
  if(!name){
   status.textContent="Please enter a story name.";
   return;
@@ -112,6 +170,7 @@ async function createStory(){
  button.textContent="⏳ Creating story...";
  status.textContent="Connecting to story generator...";
  result.textContent="";
+ document.getElementById("player").style.display="none";
 
  try{
   const response=await fetch("/api/story",{
@@ -123,14 +182,13 @@ async function createStory(){
   const data=await response.json();
 
   if(!response.ok){
-   throw new Error(data.error || "Story generation failed.");
+   throw new Error(data.error||"Story generation failed.");
   }
 
-  // Server sends the story inside data.episode.story
   const episode=data.episode;
-  const story=episode && episode.story;
+  const story=episode&&episode.story;
 
-  if(!story || !Array.isArray(story.scenes)){
+  if(!story||!Array.isArray(story.scenes)){
    throw new Error("Invalid story response from server.");
   }
 
@@ -140,32 +198,38 @@ async function createStory(){
   output+="Genre: "+episode.genre+"\n\n";
 
   output+="📖 STORY SUMMARY\n";
-  output+=(story.synopsis || "")+"\n\n";
+  output+=(story.synopsis||"")+"\n\n";
 
   output+="📚 FULL STORY\n";
-  output+=(story.fullStory || "")+"\n\n";
+  output+=(story.fullStory||"")+"\n\n";
 
   output+="🎭 CHARACTERS\n";
-  (story.characters || []).forEach(character=>{
-   output+=character.name+" - "+character.role+"\n";
+  (story.characters||[]).forEach(c=>{
+   output+=c.name+" - "+c.role+"\n";
   });
 
   output+="\n🎞️ SCENE BY SCENE STORYBOARD\n";
 
-  story.scenes.forEach(scene=>{
+  story.scenes.forEach(s=>{
    output+="\n--------------------\n";
-   output+="SCENE "+scene.number+"\n";
-   output+="Description: "+(scene.description || "")+"\n";
-   output+="Visual: "+(scene.visual || "")+"\n";
-   output+="Hindi Narration: "+(scene.narration || "")+"\n";
-   output+="Dialogue: "+(scene.dialogue || "")+"\n";
-   output+="Sound Effects: "+(scene.sound || "")+"\n";
-   output+="Subtitle: "+(scene.subtitle || "")+"\n";
+   output+="SCENE "+s.number+"\n";
+   output+="Description: "+(s.description||"")+"\n";
+   output+="Visual: "+(s.visual||"")+"\n";
+   output+="Narration: "+(s.narration||"")+"\n";
+   output+="Dialogue: "+(s.dialogue||"")+"\n";
+   output+="Sound: "+(s.sound||"")+"\n";
+   output+="Subtitle: "+(s.subtitle||"")+"\n";
   });
 
-  output+="\n\n⚠️ "+(data.notice || "Storyboard ready. Video production is not connected yet.");
+  output+="\n\n"+(data.notice||"Storyboard ready.");
 
   result.textContent=output;
+  currentScenes=story.scenes;
+  currentIndex=0;
+
+  document.getElementById("player").style.display="block";
+  showCurrentScene();
+
   status.textContent="✅ Story and storyboard generated successfully!";
 
  }catch(error){
@@ -175,6 +239,138 @@ async function createStory(){
   button.textContent="✨ Generate Story and Scenes";
  }
 }
+
+function showCurrentScene(){
+ if(!currentScenes.length)return;
+
+ const scene=currentScenes[currentIndex];
+
+ document.getElementById("sceneTitle").textContent=
+  "🎬 Scene "+scene.number;
+
+ document.getElementById("subtitle").textContent=
+  scene.subtitle||scene.narration||"";
+
+ document.getElementById("sceneCount").textContent=
+  "Scene "+(currentIndex+1)+" of "+currentScenes.length;
+}
+
+function speakScene(onEnd){
+ if(!currentScenes.length)return;
+
+ if(!("speechSynthesis" in window)){
+  alert("Is browser mein voice feature available nahi hai.");
+  return;
+ }
+
+ window.speechSynthesis.cancel();
+
+ const scene=currentScenes[currentIndex];
+ const text=(scene.narration||"")+" "+(scene.dialogue||"");
+
+ if(!text.trim()){
+  if(onEnd)onEnd();
+  return;
+ }
+
+ const utterance=new SpeechSynthesisUtterance(text);
+ utterance.lang="hi-IN";
+ utterance.rate=0.9;
+ utterance.pitch=1;
+
+ utterance.onend=()=>{
+  if(onEnd)onEnd();
+ };
+
+ utterance.onerror=()=>{
+  isPlayingAll=false;
+  paused=false;
+ };
+
+ window.speechSynthesis.speak(utterance);
+}
+
+function playAll(){
+ if(!currentScenes.length)return;
+
+ stopNarration();
+ isPlayingAll=true;
+ paused=false;
+ playSequence();
+}
+
+function playSequence(){
+ if(!isPlayingAll||paused)return;
+
+ if(currentIndex>=currentScenes.length){
+  isPlayingAll=false;
+  return;
+ }
+
+ showCurrentScene();
+
+ speakScene(()=>{
+  if(!isPlayingAll||paused)return;
+
+  currentIndex++;
+
+  if(currentIndex<currentScenes.length){
+   playSequence();
+  }else{
+   isPlayingAll=false;
+   showCurrentScene();
+  }
+ });
+}
+
+function pauseNarration(){
+ if(!("speechSynthesis" in window))return;
+
+ if(window.speechSynthesis.speaking){
+  window.speechSynthesis.pause();
+  paused=true;
+ }
+}
+
+function resumeNarration(){
+ if(!("speechSynthesis" in window))return;
+
+ if(paused){
+  window.speechSynthesis.resume();
+  paused=false;
+ }
+}
+
+function stopNarration(){
+ isPlayingAll=false;
+ paused=false;
+
+ if("speechSynthesis" in window){
+  window.speechSynthesis.cancel();
+ }
+}
+
+function nextScene(){
+ stopNarration();
+
+ if(currentIndex<currentScenes.length-1){
+  currentIndex++;
+ }
+
+ showCurrentScene();
+}
+
+function previousScene(){
+ stopNarration();
+
+ if(currentIndex>0){
+  currentIndex--;
+ }
+
+ showCurrentScene();
+}
 </script>
+
 </body>
 </html>
+ 
