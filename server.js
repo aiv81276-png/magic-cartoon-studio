@@ -101,7 +101,7 @@ function createFreeStory(name, genre, length, language, format) {
     {
       title: "Nayi subah",
       text: "Arif, Zoya, Rohan aur Sameer " +
-        plot.place + pahunchte hain."
+        plot.place + " pahunchte hain."
     },
     {
       title: "Ajeeb ghatna",
